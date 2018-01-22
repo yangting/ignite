@@ -57,17 +57,13 @@ import org.jetbrains.annotations.Nullable;
 import org.jsr166.ConcurrentHashMap8;
 
 import static org.apache.ignite.internal.MarshallerPlatformIds.JAVA_ID;
+import static org.apache.ignite.marshaller.MarshallerUtils.CLS_NAMES_FILE;
+import static org.apache.ignite.marshaller.MarshallerUtils.JDK_CLS_NAMES_FILE;
 
 /**
  * Marshaller context implementation.
  */
 public class MarshallerContextImpl implements MarshallerContext {
-    /** */
-    private static final String CLS_NAMES_FILE = "META-INF/classnames.properties";
-
-    /** */
-    private static final String JDK_CLS_NAMES_FILE = "META-INF/classnames-jdk.properties";
-
     /** */
     private final Map<Integer, MappedName> sysTypesMap = new HashMap<>();
 
