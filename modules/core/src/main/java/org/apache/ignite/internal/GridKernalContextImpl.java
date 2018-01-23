@@ -386,9 +386,6 @@ public class GridKernalContextImpl implements GridKernalContext, Externalizable 
     /** */
     private GridInternalSubscriptionProcessor internalSubscriptionProc;
 
-    /** Class name filter. */
-    private IgnitePredicate<String> clsFilter;
-
     /**
      * No-arg constructor is required by externalization.
      */
@@ -468,9 +465,8 @@ public class GridKernalContextImpl implements GridKernalContext, Externalizable 
         this.qryExecSvc = qryExecSvc;
         this.schemaExecSvc = schemaExecSvc;
         this.customExecSvcs = customExecSvcs;
-        this.clsFilter = clsFilter;
 
-        marshCtx = new MarshallerContextImpl(plugins);
+        marshCtx = new MarshallerContextImpl(plugins, clsFilter);
 
         try {
             spring = SPRING.create(false);
@@ -1095,11 +1091,6 @@ public class GridKernalContextImpl implements GridKernalContext, Externalizable 
     /**{@inheritDoc}*/
     @Override public PdsFoldersResolver pdsFolderResolver() {
         return pdsFolderRslvr;
-    }
-
-    /** {@inheritDoc} */
-    @Override public IgnitePredicate<String> classNameFilter() {
-        return clsFilter;
     }
 
     /** {@inheritDoc} */
