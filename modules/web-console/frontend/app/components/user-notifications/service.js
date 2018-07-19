@@ -15,11 +15,17 @@
  * limitations under the License.
  */
 
+import _ from 'lodash';
+
 import controller from './controller';
 import templateUrl from './template.tpl.pug';
+import {CancellationError} from 'app/errors/CancellationError';
 
 export default class UserNotificationsService {
     static $inject = ['$http', '$modal', '$q', 'IgniteMessages'];
+
+    /** @type {ng.IQService} */
+    $q;
 
     constructor($http, $modal, $q, Messages) {
         Object.assign(this, {$http, $modal, $q, Messages});
@@ -49,7 +55,7 @@ export default class UserNotificationsService {
 
         const modalHide = modal.hide;
 
-        modal.hide = () => deferred.reject('cancelled');
+        modal.hide = () => deferred.reject(new CancellationError());
 
         return deferred.promise
             .finally(modalHide)

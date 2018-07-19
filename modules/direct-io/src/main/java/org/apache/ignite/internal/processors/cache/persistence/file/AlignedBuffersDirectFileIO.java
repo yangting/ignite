@@ -29,20 +29,20 @@ import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import org.apache.ignite.IgniteLogger;
 import org.apache.ignite.configuration.DataStorageConfiguration;
 import org.apache.ignite.internal.util.GridUnsafe;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.jetbrains.annotations.NotNull;
-import org.jsr166.ConcurrentHashMap8;
 
 /**
  * Limited capabilities Direct IO, which enables file write and read using aligned buffers and O_DIRECT mode.
  *
  * Works only for Linux
  */
-public class AlignedBuffersDirectFileIO implements FileIO {
+public class AlignedBuffersDirectFileIO extends AbstractFileIO {
     /** Negative value for file offset: read/write starting from current file position */
     private static final int FILE_POS_USE_CURRENT = -1;
 
@@ -62,7 +62,7 @@ public class AlignedBuffersDirectFileIO implements FileIO {
     private ThreadLocal<ByteBuffer> tlbOnePageAligned;
 
     /** Managed aligned buffers. Used to check if buffer is applicable for direct IO our data should be copied. */
-    private ConcurrentHashMap8<Long, Thread> managedAlignedBuffers;
+    private ConcurrentHashMap<Long, Thread> managedAlignedBuffers;
 
     /** File descriptor. */
     private int fd = -1;
@@ -95,7 +95,7 @@ public class AlignedBuffersDirectFileIO implements FileIO {
         File file,
         OpenOption[] modes,
         ThreadLocal<ByteBuffer> tlbOnePageAligned,
-        ConcurrentHashMap8<Long, Thread> managedAlignedBuffers,
+        ConcurrentHashMap<Long, Thread> managedAlignedBuffers,
         IgniteLogger log)
         throws IOException {
         this.log = log;
@@ -455,18 +455,27 @@ public class AlignedBuffersDirectFileIO implements FileIO {
     }
 
     /** {@inheritDoc} */
-    @Override public void write(byte[] buf, int off, int len) throws IOException {
-        write(ByteBuffer.wrap(buf, off, len));
+    @Override public int write(byte[] buf, int off, int len) throws IOException {
+        return write(ByteBuffer.wrap(buf, off, len));
     }
 
     /** {@inheritDoc} */
-    @Override public MappedByteBuffer map(int maxWalSegmentSize) throws IOException {
+    @Override public MappedByteBuffer map(int sizeBytes) throws IOException {
         throw new UnsupportedOperationException("AsynchronousFileChannel doesn't support mmap.");
     }
 
     /** {@inheritDoc} */
     @Override public void force() throws IOException {
-        if (IgniteNativeIoLib.fsync(fdCheckOpened()) < 0)
+        force(false);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void force(boolean withMetadata) throws IOException {
+        int fd = fdCheckOpened();
+
+        int res = withMetadata ? IgniteNativeIoLib.fsync(fd) : IgniteNativeIoLib.fdatasync(fd);
+
+        if (res < 0)
             throw new IOException(String.format("Error fsync()'ing %s, got %s", file, getLastError()));
     }
 
